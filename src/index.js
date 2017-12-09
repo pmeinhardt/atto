@@ -14,13 +14,24 @@ const iseqv = u => v => {
 
 const assp = pred => alist => alist.find(x => pred(car(x)));
 
-const mkvar = i => `_.${i}`;
-const isvar = x => typeof x === 'string' && x.startsWith('_.');
-const vareq = x1 => x2 => x1 === x2;
 
-// const mkvar = i => [i];
-// const isvar = x => Array.isArray(x) && x.length === 1;
-// const vareq = x1 => x2 => x1[0] === x2[0];
+class Variable {
+  constructor(c) {
+    this.c = c;
+  }
+
+  toString() {
+    return `_.${this.c}`;
+  }
+
+  toJSON() {
+    return this.toString();
+  }
+}
+
+const mkvar = c => new Variable(c);
+const isvar = x => x instanceof Variable;
+const vareq = x1 => x2 => x1.c === x2.c;
 
 const walk = u => s => {
   const pr = isvar(u) && assp(v => vareq(u)(v))(s);
