@@ -1,15 +1,16 @@
 // https://github.com/jasonhemann/microKanren/blob/0f4505db0d2525fc3d567c5183e45f28992cfe72/microKanren.scm
 
-const cons = x => xs => [x, ...xs];       // prepend element to list
+const cons = x => xs => isproc(xs)
+  ? [x, xs]                               // streams may contain immature streams (funcs, see zzz)
+  : [x, ...xs];                           // prepend element to list
 const car = v => v[0];                    // get list head
 const cdr = v => v.slice(1);              // get list tail
-
 const isnull = x => Array.isArray(x) && x.length === 0;
 const isproc = x => typeof x === 'function';
 const ispair = x => Array.isArray(x) && x.length === 2;
 const iseqv = u => v => {
   if (Array.isArray(u) && Array.isArray(v)) return u.length === v.length && u.every((x, i) => iseqv(x, v[i]));
-  return false;
+  return u === v;
 };
 
 const assp = pred => alist => alist.find(x => pred(car(x)));
@@ -84,6 +85,13 @@ const bind = r => g => {
 
 // ---
 
+const zzz = gf => sc => () => {
+  const g = gf();
+  return g(sc);
+}
+
+// ---
+
 const empty = [[], 0];
 
 const call = g => g(empty);
@@ -93,23 +101,32 @@ const call = g => g(empty);
 
 // ---
 
-const result1 = call(fresh(x => {
-  const cond1 = eqeq(x)(3);
-  const cond2 = eqeq(x)(4);
-  return disj(cond1)(cond2);
-}));
+// const result1 = call(fresh(x => {
+//   const cond1 = eqeq(x)(3);
+//   const cond2 = eqeq(x)(4);
+//   return disj(cond1)(cond2);
+// }));
 
-console.log(JSON.stringify(result1));
-// => [ [[[[0],3]],1],    x = 3
-//      [[[[0],4]],1] ]   x = 4
+// console.log(JSON.stringify(result1));
+// // => [ [[[[0],3]],1],    x = 3
+// //      [[[[0],4]],1] ]   x = 4
 
-const result2 = call(fresh(x => fresh(y => {
-  const cond1 = eqeq(x)(3);
-  const cond2 = eqeq(x)(4);
-  const cond3 = eqeq(x)(y);
-  return conj(disj(cond1)(cond2))(cond3);
-})));
+// const result2 = call(fresh(x => fresh(y => {
+//   const cond1 = eqeq(x)(3);
+//   const cond2 = eqeq(x)(4);
+//   const cond3 = eqeq(x)(y);
+//   return conj(disj(cond1)(cond2))(cond3);
+// })));
 
-console.log(JSON.stringify(result2));
-// => [ [[[[1],3],[[0],3]],2],    y = 3, x = 3
-//      [[[[1],4],[[0],4]],2] ]   y = 4, x = 4
+// console.log(JSON.stringify(result2));
+// // => [ [[[[1],3],[[0],3]],2],    y = 3, x = 3
+// //      [[[[1],4],[[0],4]],2] ]   y = 4, x = 4
+
+module.exports = {
+  call,
+  fresh,
+  eqeq,
+  disj,
+  conj,
+  zzz
+};
